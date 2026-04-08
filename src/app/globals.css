@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Colors - Pahr Brandbook */
+
+  /* Gold Metal - #925e38 - Dorado de marca */
+  --color-gold-50: #faf6f1;
+  --color-gold-100: #f2e8da;
+  --color-gold-200: #e5cfb3;
+  --color-gold-300: #d4b085;
+  --color-gold-400: #c08e5c;
+  --color-gold-500: #925e38;
+  --color-gold-600: #7a4e2f;
+  --color-gold-700: #634028;
+  --color-gold-800: #503423;
+  --color-gold-900: #432c1f;
+  --color-gold-950: #261710;
+
+  /* Gold CTA - más brillante y contrastado, solo para botones de acción */
+  --color-cta-50: #fef9f0;
+  --color-cta-100: #fcf0d8;
+  --color-cta-200: #f8ddb0;
+  --color-cta-300: #f2c47d;
+  --color-cta-400: #eba548;
+  --color-cta-500: #e08c26;
+  --color-cta-600: #c4711b;
+  --color-cta-700: #a35618;
+  --color-cta-800: #85441b;
+  --color-cta-900: #6e3919;
+  --color-cta-950: #3e1c0a;
+
+  /* Jungle Green - basado en #152829 pero más verde y saturado */
+  --color-jungle-50: #eef5f3;
+  --color-jungle-100: #d5e8e3;
+  --color-jungle-200: #aed1c8;
+  --color-jungle-300: #7db3a6;
+  --color-jungle-400: #539183;
+  --color-jungle-500: #3a7568;
+  --color-jungle-600: #2d5e53;
+  --color-jungle-700: #274d45;
+  --color-jungle-800: #1f3d37;
+  --color-jungle-900: #1a332e;
+  --color-jungle-950: #0e1f1b;
+
+  /* Soft Amber - #d3c5b8 - Fondo cálido */
+  --color-amber-50: #f8f5f2;
+  --color-amber-100: #f0ebe5;
+  --color-amber-200: #e3dbd1;
+  --color-amber-300: #d3c5b8;
+  --color-amber-400: #bfab99;
+  --color-amber-500: #a99280;
+  --color-amber-600: #8f7868;
+  --color-amber-700: #766253;
+  --color-amber-800: #615145;
+  --color-amber-900: #52443b;
+  --color-amber-950: #2c231e;
+
+  /* Manatee - #bfc2cb - Gris azulado */
+  --color-manatee-50: #f5f6f7;
+  --color-manatee-100: #edeef1;
+  --color-manatee-200: #dcdee4;
+  --color-manatee-300: #bfc2cb;
+  --color-manatee-400: #a3a7b3;
+  --color-manatee-500: #8a8f9e;
+  --color-manatee-600: #747989;
+  --color-manatee-700: #5f6370;
+  --color-manatee-800: #51545e;
+  --color-manatee-900: #454750;
+  --color-manatee-950: #2d2e34;
+
+  /* Mountain Mist - #8a9796 - Gris verde */
+  --color-mist-50: #f4f6f6;
+  --color-mist-100: #e5eae9;
+  --color-mist-200: #cdd5d5;
+  --color-mist-300: #adb9b8;
+  --color-mist-400: #8a9796;
+  --color-mist-500: #6d7c7b;
+  --color-mist-600: #5a6766;
+  --color-mist-700: #4b5554;
+  --color-mist-800: #414949;
+  --color-mist-900: #393f3f;
+  --color-mist-950: #222727;
+
+  /* Martini - #b2a6a2 - Gris cálido */
+  --color-martini-50: #f6f4f3;
+  --color-martini-100: #ece8e6;
+  --color-martini-200: #dbd4d1;
+  --color-martini-300: #c5bbb6;
+  --color-martini-400: #b2a6a2;
+  --color-martini-500: #968882;
+  --color-martini-600: #7d706a;
+  --color-martini-700: #685d58;
+  --color-martini-800: #574f4b;
+  --color-martini-900: #4c4542;
+  --color-martini-950: #282422;
+
+  /* Charcoal - neutrals for text */
+  --color-charcoal-50: #f6f6f6;
+  --color-charcoal-100: #e7e7e7;
+  --color-charcoal-200: #d1d1d1;
+  --color-charcoal-300: #b0b0b0;
+  --color-charcoal-400: #888888;
+  --color-charcoal-500: #6d6d6d;
+  --color-charcoal-600: #5d5d5d;
+  --color-charcoal-700: #4f4f4f;
+  --color-charcoal-800: #454545;
+  --color-charcoal-900: #3d3d3d;
+  --color-charcoal-950: #1a1a1a;
+
+  /* Font families */
+  --font-heading: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-body: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-jungle-950);
+  background-color: var(--color-amber-50);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+.font-logo {
+  font-family: var(--font-logo), cursive;
+}
