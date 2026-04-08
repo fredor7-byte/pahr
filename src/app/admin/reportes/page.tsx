@@ -1,5 +1,5 @@
-"use client";
-
+import { createAdminClient } from "@/lib/supabase/admin";
+import { formatUSD } from "@/lib/utils";
 import { StatsCard } from "@/components/admin/stats-card";
 import { RevenueChart } from "@/components/admin/revenue-chart";
 import {
@@ -7,37 +7,131 @@ import {
   ShoppingCart,
   Users,
   TrendingUp,
-  ShoppingBag,
-  CreditCard,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import ReportesCharts from "./reportes-charts";
 
-const paymentData = [
-  { name: "Pago Móvil", value: 45, color: "#2D5016" },
-  { name: "Zelle", value: 35, color: "#d49a22" },
-  { name: "Transferencia", value: 20, color: "#C3B091" },
-];
+export default async function ReportesPage() {
+  const supabase = createAdminClient();
 
-const topProducts = [
-  { name: "Polo Heritage", units: 42 },
-  { name: "Hoodie Forest", units: 35 },
-  { name: "Pantalón Clubhouse", units: 28 },
-  { name: "Franela Fairway", units: 22 },
-  { name: "Polo Green Master", units: 18 },
-];
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-export default function ReportesPage() {
+  // Fetch orders in last 90 days for stats
+  const { data: recentOrders } = await supabase
+    .from("orders")
+    .select("id, total_usd, payment_method, status, created_at")
+    .gte("created_at", ninetyDaysAgo.toISOString())
+    .in("status", ["pago_verificado", "en_preparacion", "enviado", "entregado"]);
+
+  const orders90 = recentOrders ?? [];
+  const totalRevenue = orders90.reduce((sum, o) => sum + ((o.total_usd as number) ?? 0), 0);
+  const totalOrders = orders90.length;
+  const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  // Count unique customers
+  const { count: customerCount } = await supabase
+    .from("customers")
+    .select("id", { count: "exact", head: true });
+
+  // Payment method distribution
+  const paymentCounts: Record<string, number> = {};
+  for (const o of orders90) {
+    const method = o.payment_method as string;
+    paymentCounts[method] = (paymentCounts[method] ?? 0) + 1;
+  }
+  const paymentMethodColors: Record<string, string> = {
+    pago_movil: "#2D5016",
+    zelle: "#d49a22",
+    transferencia: "#C3B091",
+  };
+  const paymentMethodLabels: Record<string, string> = {
+    pago_movil: "Pago Móvil",
+    zelle: "Zelle",
+    transferencia: "Transferencia",
+  };
+  const paymentData = Object.entries(paymentCounts).map(([method, count]) => ({
+    name: paymentMethodLabels[method] ?? method,
+    value: totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0,
+    color: paymentMethodColors[method] ?? "#999",
+  }));
+
+  // Top products by units sold
+  const { data: topItems } = await supabase
+    .from("order_items")
+    .select("product_name, quantity");
+
+  const productUnits: Record<string, number> = {};
+  for (const item of topItems ?? []) {
+    const name = item.product_name as string;
+    productUnits[name] = (productUnits[name] ?? 0) + ((item.quantity as number) ?? 0);
+  }
+  const topProducts = Object.entries(productUnits)
+    .map(([name, units]) => ({ name, units }))
+    .sort((a, b) => b.units - a.units)
+    .slice(0, 5);
+
+  // Revenue chart data (last 30 days)
+  const { data: revenueOrders } = await supabase
+    .from("orders")
+    .select("total_usd, created_at")
+    .gte("created_at", thirtyDaysAgo.toISOString())
+    .in("status", ["pago_verificado", "en_preparacion", "enviado", "entregado"])
+    .order("created_at", { ascending: true });
+
+  const revenueByDate: Record<string, number> = {};
+  for (const o of revenueOrders ?? []) {
+    const date = new Date(o.created_at).toLocaleDateString("es-VE", {
+      day: "numeric",
+      month: "short",
+    });
+    revenueByDate[date] = (revenueByDate[date] ?? 0) + (o.total_usd as number);
+  }
+  const revenueData = Object.entries(revenueByDate).map(([date, revenue]) => ({
+    date,
+    revenue,
+  }));
+
+  // Abandoned carts (last 30 days)
+  const { data: abandonedCarts, count: abandonedCount } = await supabase
+    .from("carts")
+    .select("id, total_usd", { count: "exact" })
+    .gte("created_at", thirtyDaysAgo.toISOString())
+    .is("converted_at", null);
+
+  const abandoned = abandonedCarts ?? [];
+  const abandonedTotal = abandoned.reduce(
+    (sum, c) => sum + (((c as Record<string, unknown>).total_usd as number) ?? 0),
+    0
+  );
+  const abandonedAvg = (abandonedCount ?? 0) > 0 ? abandonedTotal / (abandonedCount ?? 1) : 0;
+
+  // Analytics events for conversion funnel
+  const { count: sessionCount } = await supabase
+    .from("analytics_events")
+    .select("id", { count: "exact", head: true })
+    .eq("event_type", "session_start")
+    .gte("created_at", ninetyDaysAgo.toISOString());
+
+  const { count: addToCartCount } = await supabase
+    .from("analytics_events")
+    .select("id", { count: "exact", head: true })
+    .eq("event_type", "add_to_cart")
+    .gte("created_at", ninetyDaysAgo.toISOString());
+
+  const { count: checkoutCount } = await supabase
+    .from("analytics_events")
+    .select("id", { count: "exact", head: true })
+    .eq("event_type", "checkout_start")
+    .gte("created_at", ninetyDaysAgo.toISOString());
+
+  const sessions = sessionCount ?? 0;
+  const addedToCart = addToCartCount ?? 0;
+  const startedCheckout = checkoutCount ?? 0;
+  const purchased = totalOrders;
+  const conversionRate = sessions > 0 ? ((purchased / sessions) * 100).toFixed(1) : "0";
+
   return (
     <div className="space-y-6">
       <div>
@@ -53,143 +147,43 @@ export default function ReportesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Ingresos totales"
-          value="$12,450"
+          value={formatUSD(totalRevenue)}
           description="Últimos 90 días"
           icon={DollarSign}
         />
         <StatsCard
           title="Pedidos"
-          value="87"
+          value={String(totalOrders)}
           description="Últimos 90 días"
           icon={ShoppingCart}
         />
         <StatsCard
           title="Ticket promedio"
-          value="$143"
+          value={formatUSD(avgTicket)}
           icon={TrendingUp}
         />
         <StatsCard
           title="Clientes únicos"
-          value="52"
+          value={String(customerCount ?? 0)}
           description="Total registrados"
           icon={Users}
         />
       </div>
 
-      {/* Charts row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
-        <RevenueChart />
-
-        {/* Payment Methods */}
-        <div className="bg-white rounded-lg border border-charcoal-200 p-5">
-          <h3 className="font-heading text-lg font-semibold text-charcoal-900 mb-4 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-charcoal-400" />
-            Métodos de pago
-          </h3>
-          <div className="h-64 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={paymentData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, value }) => `${name} ${value}%`}
-                  labelLine={false}
-                >
-                  {paymentData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Products */}
-      <div className="bg-white rounded-lg border border-charcoal-200 p-5">
-        <h3 className="font-heading text-lg font-semibold text-charcoal-900 mb-4 flex items-center gap-2">
-          <ShoppingBag className="h-5 w-5 text-charcoal-400" />
-          Productos más vendidos
-        </h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={topProducts} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7e7e7" />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tick={{ fontSize: 12 }}
-                width={130}
-              />
-              <Tooltip />
-              <Bar dataKey="units" fill="#2D5016" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Conversion & Carts */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg border border-charcoal-200 p-5">
-          <h3 className="font-heading text-lg font-semibold mb-3">
-            Tasa de conversión
-          </h3>
-          <p className="text-4xl font-heading font-bold text-forest-700">
-            3.2%
-          </p>
-          <p className="text-sm text-charcoal-500 mt-1">
-            Compras / Sesiones totales
-          </p>
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Sesiones</span>
-              <span>2,718</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Agregaron al carrito</span>
-              <span>312 (11.5%)</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Iniciaron checkout</span>
-              <span>145 (5.3%)</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>Compraron</span>
-              <span>87 (3.2%)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-charcoal-200 p-5">
-          <h3 className="font-heading text-lg font-semibold mb-3">
-            Carritos abandonados
-          </h3>
-          <p className="text-4xl font-heading font-bold text-yellow-600">58</p>
-          <p className="text-sm text-charcoal-500 mt-1">
-            Últimos 30 días
-          </p>
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Valor promedio</span>
-              <span>$67.50</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Valor total perdido</span>
-              <span className="text-red-600">$3,915</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-charcoal-500">Producto más abandonado</span>
-              <span>Pantalón Clubhouse</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Charts */}
+      <ReportesCharts
+        revenueData={revenueData}
+        paymentData={paymentData}
+        topProducts={topProducts}
+        conversionRate={conversionRate}
+        sessions={sessions}
+        addedToCart={addedToCart}
+        startedCheckout={startedCheckout}
+        purchased={purchased}
+        abandonedCount={abandonedCount ?? 0}
+        abandonedAvg={abandonedAvg}
+        abandonedTotal={abandonedTotal}
+      />
     </div>
   );
 }

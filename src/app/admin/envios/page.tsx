@@ -1,7 +1,5 @@
-"use client";
-
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -10,21 +8,46 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Truck } from "lucide-react";
-
-const mockShipments = [
-  { order_number: "PAHR-00002", customer: "María González", status: "preparando", carrier: "—", tracking: "—", date: "2024-04-06" },
-  { order_number: "PAHR-00003", customer: "Andrés Martínez", status: "en_transito", carrier: "MRW", tracking: "MRW-123456", date: "2024-04-05" },
-  { order_number: "PAHR-00005", customer: "Diego Herrera", status: "preparando", carrier: "—", tracking: "—", date: "2024-04-07" },
-];
+import EnviosActions from "./envios-actions";
 
 const statusBadge: Record<string, { label: string; variant: "warning" | "info" | "success" }> = {
-  preparando: { label: "Preparando", variant: "warning" },
-  en_transito: { label: "En tránsito", variant: "info" },
+  pago_verificado: { label: "Preparando", variant: "warning" },
+  en_preparacion: { label: "Preparando", variant: "warning" },
+  enviado: { label: "En tránsito", variant: "info" },
   entregado: { label: "Entregado", variant: "success" },
 };
 
-export default function EnviosPage() {
+export default async function EnviosPage() {
+  const supabase = createAdminClient();
+
+  const { data: ordersData } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      order_number,
+      status,
+      created_at,
+      customers (full_name),
+      shipments (carrier, tracking_number)
+    `)
+    .in("status", ["pago_verificado", "en_preparacion", "enviado"])
+    .order("created_at", { ascending: false });
+
+  const shipments = (ordersData ?? []).map((o: Record<string, unknown>) => {
+    const customer = o.customers as Record<string, unknown> | null;
+    const shipmentArr = o.shipments as Record<string, unknown>[] | null;
+    const shipment = shipmentArr?.[0] ?? null;
+    return {
+      order_id: o.id as string,
+      order_number: o.order_number as string,
+      customer: (customer?.full_name as string) ?? "—",
+      status: o.status as string,
+      carrier: (shipment?.carrier as string) ?? "—",
+      tracking: (shipment?.tracking_number as string) ?? "—",
+      date: o.created_at as string,
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -50,41 +73,43 @@ export default function EnviosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockShipments.map((s) => (
-              <TableRow key={s.order_number}>
-                <TableCell className="font-mono text-sm text-forest-700">
-                  {s.order_number}
-                </TableCell>
-                <TableCell className="text-sm">{s.customer}</TableCell>
-                <TableCell>
-                  <Badge variant={statusBadge[s.status].variant}>
-                    {statusBadge[s.status].label}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm">{s.carrier}</TableCell>
-                <TableCell className="font-mono text-xs text-charcoal-500">
-                  {s.tracking}
-                </TableCell>
-                <TableCell className="text-sm text-charcoal-500">
-                  {new Date(s.date).toLocaleDateString("es-VE", {
-                    day: "2-digit",
-                    month: "short",
-                  })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      alert(`Agregar tracking a ${s.order_number} (mock)`)
-                    }
-                  >
-                    <Truck className="h-3.5 w-3.5 mr-1" />
-                    {s.status === "preparando" ? "Agregar tracking" : "Actualizar"}
-                  </Button>
+            {shipments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-sm text-charcoal-400 py-8">
+                  No hay envíos pendientes
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              shipments.map((s) => (
+                <TableRow key={s.order_id}>
+                  <TableCell className="font-mono text-sm text-forest-700">
+                    {s.order_number}
+                  </TableCell>
+                  <TableCell className="text-sm">{s.customer}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusBadge[s.status]?.variant ?? "info"}>
+                      {statusBadge[s.status]?.label ?? s.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">{s.carrier}</TableCell>
+                  <TableCell className="font-mono text-xs text-charcoal-500">
+                    {s.tracking}
+                  </TableCell>
+                  <TableCell className="text-sm text-charcoal-500">
+                    {new Date(s.date).toLocaleDateString("es-VE", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <EnviosActions
+                      orderNumber={s.order_number}
+                      status={s.status}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

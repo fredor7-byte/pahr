@@ -11,63 +11,15 @@ import {
 } from "@/components/ui/table";
 import Link from "next/link";
 
-interface OrderRow {
+export interface OrderRow {
   id: string;
   order_number: string;
   customer_name: string;
-  status: keyof typeof ORDER_STATUSES;
-  payment_method: keyof typeof PAYMENT_METHODS;
+  status: string;
+  payment_method: string;
   total_usd: number;
   created_at: string;
 }
-
-const mockOrders: OrderRow[] = [
-  {
-    id: "o1",
-    order_number: "PAHR-00001",
-    customer_name: "Carlos Rodríguez",
-    status: "pendiente",
-    payment_method: "pago_movil",
-    total_usd: 83.00,
-    created_at: "2024-04-07T10:30:00",
-  },
-  {
-    id: "o2",
-    order_number: "PAHR-00002",
-    customer_name: "María González",
-    status: "pago_verificado",
-    payment_method: "zelle",
-    total_usd: 145.00,
-    created_at: "2024-04-06T15:20:00",
-  },
-  {
-    id: "o3",
-    order_number: "PAHR-00003",
-    customer_name: "Andrés Martínez",
-    status: "enviado",
-    payment_method: "transferencia",
-    total_usd: 52.00,
-    created_at: "2024-04-05T09:15:00",
-  },
-  {
-    id: "o4",
-    order_number: "PAHR-00004",
-    customer_name: "Laura Pérez",
-    status: "entregado",
-    payment_method: "pago_movil",
-    total_usd: 96.00,
-    created_at: "2024-04-03T14:45:00",
-  },
-  {
-    id: "o5",
-    order_number: "PAHR-00005",
-    customer_name: "Diego Herrera",
-    status: "en_preparacion",
-    payment_method: "zelle",
-    total_usd: 38.00,
-    created_at: "2024-04-07T08:00:00",
-  },
-];
 
 const badgeVariant: Record<string, "default" | "success" | "warning" | "error" | "info"> = {
   pendiente: "warning",
@@ -78,8 +30,8 @@ const badgeVariant: Record<string, "default" | "success" | "warning" | "error" |
   cancelado: "error",
 };
 
-export function OrdersTable({ limit }: { limit?: number }) {
-  const orders = limit ? mockOrders.slice(0, limit) : mockOrders;
+export function OrdersTable({ orders, limit }: { orders: OrderRow[]; limit?: number }) {
+  const displayed = limit ? orders.slice(0, limit) : orders;
 
   return (
     <div className="bg-white rounded-lg border border-charcoal-200">
@@ -108,36 +60,44 @@ export function OrdersTable({ limit }: { limit?: number }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell>
-                <Link
-                  href={`/admin/pedidos/${order.id}`}
-                  className="font-mono text-sm text-forest-700 hover:underline"
-                >
-                  {order.order_number}
-                </Link>
-              </TableCell>
-              <TableCell className="text-sm">{order.customer_name}</TableCell>
-              <TableCell>
-                <Badge variant={badgeVariant[order.status]}>
-                  {ORDER_STATUSES[order.status].label}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm text-charcoal-500">
-                {PAYMENT_METHODS[order.payment_method].label}
-              </TableCell>
-              <TableCell className="text-right font-medium text-sm">
-                {formatUSD(order.total_usd)}
-              </TableCell>
-              <TableCell className="text-sm text-charcoal-500">
-                {new Date(order.created_at).toLocaleDateString("es-VE", {
-                  day: "2-digit",
-                  month: "short",
-                })}
+          {displayed.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-sm text-charcoal-400 py-8">
+                No hay pedidos aún
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            displayed.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>
+                  <Link
+                    href={`/admin/pedidos/${order.id}`}
+                    className="font-mono text-sm text-forest-700 hover:underline"
+                  >
+                    {order.order_number}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-sm">{order.customer_name}</TableCell>
+                <TableCell>
+                  <Badge variant={badgeVariant[order.status] ?? "default"}>
+                    {ORDER_STATUSES[order.status as keyof typeof ORDER_STATUSES]?.label ?? order.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-sm text-charcoal-500">
+                  {PAYMENT_METHODS[order.payment_method as keyof typeof PAYMENT_METHODS]?.label ?? order.payment_method}
+                </TableCell>
+                <TableCell className="text-right font-medium text-sm">
+                  {formatUSD(order.total_usd)}
+                </TableCell>
+                <TableCell className="text-sm text-charcoal-500">
+                  {new Date(order.created_at).toLocaleDateString("es-VE", {
+                    day: "2-digit",
+                    month: "short",
+                  })}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

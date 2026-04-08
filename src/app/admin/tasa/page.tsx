@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,24 +15,63 @@ import {
 } from "@/components/ui/table";
 import { DollarSign, Save } from "lucide-react";
 
-const mockHistory = [
-  { id: "r1", rate: 36.50, notes: "Tasa del día", set_by: "Admin", created_at: "2024-04-07T09:00:00", is_current: true },
-  { id: "r2", rate: 36.20, notes: "Actualización matutina", set_by: "Admin", created_at: "2024-04-06T08:30:00", is_current: false },
-  { id: "r3", rate: 35.80, notes: "Tasa BCV", set_by: "Admin", created_at: "2024-04-05T09:15:00", is_current: false },
-  { id: "r4", rate: 35.50, notes: null, set_by: "Admin", created_at: "2024-04-04T10:00:00", is_current: false },
-  { id: "r5", rate: 35.30, notes: "Tasa de apertura", set_by: "Admin", created_at: "2024-04-03T08:45:00", is_current: false },
-];
+interface ExchangeRate {
+  id: string;
+  rate: number;
+  notes: string | null;
+  set_by: string | null;
+  created_at: string;
+  is_current: boolean;
+}
 
 export default function TasaPage() {
   const [newRate, setNewRate] = useState("");
   const [notes, setNotes] = useState("");
-  const currentRate = mockHistory.find((r) => r.is_current);
+  const [history, setHistory] = useState<ExchangeRate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchRates = async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("exchange_rates")
+      .select("id, rate, notes, set_by, created_at, is_current")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setHistory(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchRates();
+  }, []);
+
+  const currentRate = history.find((r) => r.is_current);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Tasa actualizada a ${newRate} Bs/$ (mock)`);
+    const supabase = createClient();
+
+    // Mark all current rates as not current
+    await supabase
+      .from("exchange_rates")
+      .update({ is_current: false })
+      .eq("is_current", true);
+
+    // Insert new rate
+    const { error } = await supabase.from("exchange_rates").insert({
+      rate: parseFloat(newRate),
+      notes: notes || null,
+      is_current: true,
+    });
+
+    if (error) {
+      alert("Error al guardar la tasa: " + error.message);
+      return;
+    }
+
     setNewRate("");
     setNotes("");
+    fetchRates();
   };
 
   return (
@@ -51,14 +90,16 @@ export default function TasaPage() {
         <div className="flex items-center gap-3 mb-1">
           <DollarSign className="h-6 w-6 text-forest-600" />
           <span className="text-sm text-charcoal-500">Tasa actual</span>
-          <Badge variant="success">Vigente</Badge>
+          {currentRate && <Badge variant="success">Vigente</Badge>}
         </div>
         <p className="text-4xl font-heading font-bold text-charcoal-950">
-          {currentRate?.rate} <span className="text-lg text-charcoal-500">Bs/$</span>
+          {loading ? "..." : currentRate?.rate ?? "Sin tasa"}{" "}
+          <span className="text-lg text-charcoal-500">Bs/$</span>
         </p>
         <p className="text-xs text-charcoal-400 mt-1">
-          Actualizada: {currentRate && new Date(currentRate.created_at).toLocaleString("es-VE")}
-          {currentRate?.notes && ` — ${currentRate.notes}`}
+          {currentRate
+            ? `Actualizada: ${new Date(currentRate.created_at).toLocaleString("es-VE")}${currentRate.notes ? ` — ${currentRate.notes}` : ""}`
+            : "No se ha configurado una tasa aún"}
         </p>
       </div>
 
@@ -124,28 +165,42 @@ export default function TasaPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockHistory.map((rate) => (
-              <TableRow key={rate.id}>
-                <TableCell className="font-mono font-medium">
-                  {rate.rate}
-                </TableCell>
-                <TableCell className="text-sm text-charcoal-500">
-                  {rate.notes ?? "—"}
-                </TableCell>
-                <TableCell className="text-sm">{rate.set_by}</TableCell>
-                <TableCell className="text-sm text-charcoal-500">
-                  {new Date(rate.created_at).toLocaleString("es-VE", {
-                    day: "2-digit",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </TableCell>
-                <TableCell>
-                  {rate.is_current && <Badge variant="success">Vigente</Badge>}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-sm text-charcoal-400 py-8">
+                  Cargando...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : history.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-sm text-charcoal-400 py-8">
+                  No hay historial de tasas
+                </TableCell>
+              </TableRow>
+            ) : (
+              history.map((rate) => (
+                <TableRow key={rate.id}>
+                  <TableCell className="font-mono font-medium">
+                    {rate.rate}
+                  </TableCell>
+                  <TableCell className="text-sm text-charcoal-500">
+                    {rate.notes ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-sm">{rate.set_by ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-charcoal-500">
+                    {new Date(rate.created_at).toLocaleString("es-VE", {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {rate.is_current && <Badge variant="success">Vigente</Badge>}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
