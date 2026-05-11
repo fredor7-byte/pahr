@@ -17,7 +17,7 @@ import { DollarSign, Save } from "lucide-react";
 
 interface ExchangeRate {
   id: string;
-  rate: number;
+  rate_bs_per_usd: number;
   notes: string | null;
   set_by: string | null;
   created_at: string;
@@ -29,20 +29,34 @@ export default function TasaPage() {
   const [notes, setNotes] = useState("");
   const [history, setHistory] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminId, setAdminId] = useState<string | null>(null);
 
   const fetchRates = async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from("exchange_rates")
-      .select("id, rate, notes, set_by, created_at, is_current")
+      .select("id, rate_bs_per_usd, notes, set_by, created_at, is_current")
       .order("created_at", { ascending: false })
       .limit(20);
     setHistory(data ?? []);
     setLoading(false);
   };
 
+  const fetchAdminId = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: admin } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+    if (admin) setAdminId(admin.id);
+  };
+
   useEffect(() => {
     fetchRates();
+    fetchAdminId();
   }, []);
 
   const currentRate = history.find((r) => r.is_current);
@@ -51,16 +65,16 @@ export default function TasaPage() {
     e.preventDefault();
     const supabase = createClient();
 
-    // Mark all current rates as not current
-    await supabase
-      .from("exchange_rates")
-      .update({ is_current: false })
-      .eq("is_current", true);
+    if (!adminId) {
+      alert("Error: No se pudo identificar al administrador");
+      return;
+    }
 
-    // Insert new rate
+    // Insert new rate (trigger will deactivate previous ones)
     const { error } = await supabase.from("exchange_rates").insert({
-      rate: parseFloat(newRate),
+      rate_bs_per_usd: parseFloat(newRate),
       notes: notes || null,
+      set_by: adminId,
       is_current: true,
     });
 
@@ -93,7 +107,7 @@ export default function TasaPage() {
           {currentRate && <Badge variant="success">Vigente</Badge>}
         </div>
         <p className="text-4xl font-heading font-bold text-charcoal-950">
-          {loading ? "..." : currentRate?.rate ?? "Sin tasa"}{" "}
+          {loading ? "..." : currentRate?.rate_bs_per_usd ?? "Sin tasa"}{" "}
           <span className="text-lg text-charcoal-500">Bs/$</span>
         </p>
         <p className="text-xs text-charcoal-400 mt-1">
@@ -126,7 +140,7 @@ export default function TasaPage() {
                 min="0"
                 value={newRate}
                 onChange={(e) => setNewRate(e.target.value)}
-                placeholder="36.50"
+                placeholder="86.50"
                 className="flex h-10 w-full rounded-md border border-charcoal-300 bg-white pl-10 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest-500 focus-visible:ring-offset-1"
                 required
               />
@@ -159,7 +173,6 @@ export default function TasaPage() {
             <TableRow>
               <TableHead>Tasa (Bs/$)</TableHead>
               <TableHead>Notas</TableHead>
-              <TableHead>Actualizada por</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Estado</TableHead>
             </TableRow>
@@ -167,13 +180,13 @@ export default function TasaPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-charcoal-400 py-8">
+                <TableCell colSpan={4} className="text-center text-sm text-charcoal-400 py-8">
                   Cargando...
                 </TableCell>
               </TableRow>
             ) : history.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-charcoal-400 py-8">
+                <TableCell colSpan={4} className="text-center text-sm text-charcoal-400 py-8">
                   No hay historial de tasas
                 </TableCell>
               </TableRow>
@@ -181,12 +194,11 @@ export default function TasaPage() {
               history.map((rate) => (
                 <TableRow key={rate.id}>
                   <TableCell className="font-mono font-medium">
-                    {rate.rate}
+                    {rate.rate_bs_per_usd}
                   </TableCell>
                   <TableCell className="text-sm text-charcoal-500">
                     {rate.notes ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{rate.set_by ?? "—"}</TableCell>
                   <TableCell className="text-sm text-charcoal-500">
                     {new Date(rate.created_at).toLocaleString("es-VE", {
                       day: "2-digit",
