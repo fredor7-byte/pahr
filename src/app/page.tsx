@@ -10,10 +10,10 @@ import {
 
 // Map categories to their best photos
 const categoryImages: Record<string, string> = {
-  hoodies: "/images/products/lifestyle/lifestyle-hero.jpg",
-  jerseys: "/images/products/lifestyle/lifestyle-7.jpg",
+  hoodies: "/images/products/signature-hoodie/green-1.jpg",
+  jerseys: "/images/products/signature-jersey/offwhite-1.jpg",
   tees: "/images/products/sunday-tees/black-1.jpg",
-  polos: "/images/products/pique-polo/beige-1.jpg",
+  polos: "/images/products/pique-polo/beige-2.jpg",
   pants: "/images/products/fred-elegance-pants/navy-1.jpg",
 };
 
@@ -66,14 +66,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Lookbook Strip - lifestyle photos */}
+      {/* Lookbook Strip - product photos */}
       <FadeIn>
         <section className="grid grid-cols-4 md:grid-cols-4 gap-0">
           {[
+            { src: "/images/products/signature-hoodie/grey-1.jpg", alt: "Signature Hoodie Grey" },
+            { src: "/images/products/signature-jersey/graphite-1.jpg", alt: "Signature Jersey Graphite" },
+            { src: "/images/products/pique-polo/beige-2.jpg", alt: "Piqué Polo Beige" },
             { src: "/images/products/sunday-tees/black-detail.jpg", alt: "Sunday Tees detail" },
-            { src: "/images/products/pique-polo/lila-2.jpg", alt: "Piqué Polo Lila" },
-            { src: "/images/products/lifestyle/lifestyle-2.jpg", alt: "Pahr lifestyle" },
-            { src: "/images/products/pique-polo/lila-detail2.jpg", alt: "Pahr bordado detail" },
           ].map((img) => (
             <div key={img.src} className="relative aspect-square overflow-hidden">
               <Image
@@ -132,7 +132,7 @@ export default function Home() {
             <StaggerItem className="md:col-span-2 md:row-span-2">
               <Link href="/catalogo/pique-polo" className="group block relative h-full min-h-[400px] overflow-hidden">
                 <Image
-                  src="/images/products/pique-polo/beige-1.jpg"
+                  src="/images/products/pique-polo/beige-2.jpg"
                   alt="Piqué Polo Beige"
                   fill
                   sizes="(max-width: 768px) 50vw, 66vw"
