@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/constants";
-import { Banknote, Building2, DollarSign } from "lucide-react";
+import { Banknote, DollarSign, Bitcoin } from "lucide-react";
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod | "";
@@ -11,31 +11,27 @@ interface PaymentMethodSelectorProps {
 
 const icons: Record<PaymentMethod, React.ReactNode> = {
   pago_movil: <Banknote className="h-5 w-5" />,
-  transferencia: <Building2 className="h-5 w-5" />,
   zelle: <DollarSign className="h-5 w-5" />,
+  binance: <Bitcoin className="h-5 w-5" />,
 };
 
 const paymentDetails: Record<PaymentMethod, { fields: { label: string; value: string }[] }> = {
   pago_movil: {
     fields: [
-      { label: "Banco", value: "Banesco" },
-      { label: "Teléfono", value: "0412-000-0000" },
-      { label: "Cédula", value: "V-00.000.000" },
-      { label: "Titular", value: "Pahr Golf C.A." },
-    ],
-  },
-  transferencia: {
-    fields: [
-      { label: "Banco", value: "Banesco" },
-      { label: "Cuenta", value: "0134-0000-00-0000000000" },
-      { label: "RIF", value: "J-00000000-0" },
-      { label: "Titular", value: "Pahr Golf C.A." },
+      { label: "Banco", value: "BNC" },
+      { label: "Cédula", value: "V-21.482.111" },
+      { label: "Teléfono", value: "0412-2779627" },
     ],
   },
   zelle: {
     fields: [
-      { label: "Email", value: "pagos@pahr.com" },
-      { label: "Titular", value: "Pahr Golf" },
+      { label: "Email", value: "Fjsantos1993@gmail.com" },
+    ],
+  },
+  binance: {
+    fields: [
+      { label: "Binance ID", value: "912451272" },
+      { label: "Alias", value: "Pahr Shop" },
     ],
   },
 };
@@ -59,14 +55,14 @@ export function PaymentMethodSelector({
                 className={cn(
                   "w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
                   selected === key
-                    ? "border-forest-600 bg-forest-50"
+                    ? "border-gold-500 bg-amber-50"
                     : "border-charcoal-200 hover:border-charcoal-300"
                 )}
               >
                 <div
                   className={cn(
                     "shrink-0",
-                    selected === key ? "text-forest-700" : "text-charcoal-400"
+                    selected === key ? "text-gold-600" : "text-charcoal-400"
                   )}
                 >
                   {icons[key]}
@@ -83,15 +79,15 @@ export function PaymentMethodSelector({
 
               {/* Payment details */}
               {selected === key && (
-                <div className="mt-2 ml-1 p-4 bg-sand-100 rounded-lg border border-sand-200">
+                <div className="mt-2 ml-1 p-4 bg-amber-50 rounded-lg border border-amber-200">
                   <p className="text-xs font-medium text-charcoal-700 mb-2 uppercase tracking-wider">
                     Datos para el pago
                   </p>
                   <div className="space-y-1.5">
                     {paymentDetails[key].fields.map((field) => (
-                      <div key={field.label} className="flex justify-between text-sm">
-                        <span className="text-charcoal-500">{field.label}</span>
-                        <span className="font-mono text-charcoal-900 select-all">
+                      <div key={field.label} className="flex justify-between text-sm gap-3">
+                        <span className="text-charcoal-500 shrink-0">{field.label}</span>
+                        <span className="font-mono text-charcoal-900 select-all text-right break-all">
                           {field.value}
                         </span>
                       </div>

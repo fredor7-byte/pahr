@@ -20,8 +20,8 @@ export type OrderStatus = keyof typeof ORDER_STATUSES;
 
 export const PAYMENT_METHODS = {
   pago_movil: { label: "Pago Móvil", currency: "VES" },
-  transferencia: { label: "Transferencia Bancaria", currency: "VES" },
   zelle: { label: "Zelle", currency: "USD" },
+  binance: { label: "Binance Pay", currency: "USD" },
 } as const;
 
 export type PaymentMethod = keyof typeof PAYMENT_METHODS;

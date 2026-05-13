@@ -44,12 +44,12 @@ export default async function ReportesPage() {
   const paymentMethodColors: Record<string, string> = {
     pago_movil: "#2D5016",
     zelle: "#d49a22",
-    transferencia: "#C3B091",
+    binance: "#F0B90B",
   };
   const paymentMethodLabels: Record<string, string> = {
     pago_movil: "Pago Móvil",
     zelle: "Zelle",
-    transferencia: "Transferencia",
+    binance: "Binance Pay",
   };
   const paymentData = Object.entries(paymentCounts).map(([method, count]) => ({
     name: paymentMethodLabels[method] ?? method,

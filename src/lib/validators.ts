@@ -16,7 +16,7 @@ export const customerSchema = z.object({
 });
 
 export const checkoutSchema = customerSchema.extend({
-  payment_method: z.enum(["pago_movil", "transferencia", "zelle"]),
+  payment_method: z.enum(["pago_movil", "zelle", "binance"]),
   notes: z.string().optional(),
 });
 

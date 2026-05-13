@@ -15,7 +15,7 @@ interface CreateOrderInput {
     zip?: string;
     reference?: string;
   };
-  payment_method: "pago_movil" | "transferencia" | "zelle";
+  payment_method: "pago_movil" | "zelle" | "binance";
   notes?: string;
   reference_number: string;
   declared_amount: number;
