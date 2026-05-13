@@ -12,6 +12,7 @@ export interface CartItem {
     slug: string;
     base_price_usd: number;
     category_name: string;
+    image_url: string | null;
   };
   quantity: number;
 }
@@ -64,6 +65,15 @@ export const useCartStore = create<CartStore>()(
             return { items: updated, isOpen: true };
           }
 
+          // Find best image: match selected variant color, fallback to primary
+          const colorLower = variant.color.toLowerCase();
+          const matchingImage = product.images?.find((img) =>
+            img.alt_text?.toLowerCase().includes(colorLower)
+          );
+          const primaryImage =
+            product.images?.find((img) => img.is_primary) ?? product.images?.[0];
+          const imageUrl = matchingImage?.url ?? primaryImage?.url ?? null;
+
           return {
             items: [
               ...state.items,
@@ -75,6 +85,7 @@ export const useCartStore = create<CartStore>()(
                   slug: product.slug,
                   base_price_usd: product.base_price_usd,
                   category_name: product.category?.name ?? "",
+                  image_url: imageUrl,
                 },
                 quantity,
               },

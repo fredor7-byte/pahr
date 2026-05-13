@@ -6,6 +6,7 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function CarritoPage() {
   const { items, removeItem, updateQuantity, clearCart, totalUSD } =
@@ -56,12 +57,27 @@ export default function CarritoPage() {
                 key={item.variant.id}
                 className="flex gap-4 p-4 bg-white rounded-lg border border-charcoal-200"
               >
-                {/* Image placeholder */}
-                <div className="w-24 h-28 rounded-md bg-charcoal-100 shrink-0 flex items-center justify-center">
-                  <span className="font-heading text-sm text-charcoal-400">
-                    PAHR
-                  </span>
-                </div>
+                {/* Product image */}
+                <Link
+                  href={`/catalogo/${item.product.slug}`}
+                  className="relative w-24 h-28 rounded-md bg-charcoal-100 shrink-0 overflow-hidden"
+                >
+                  {item.product.image_url ? (
+                    <Image
+                      src={item.product.image_url}
+                      alt={item.product.name}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="font-logo text-sm text-charcoal-400">
+                        Pahr
+                      </span>
+                    </div>
+                  )}
+                </Link>
 
                 <div className="flex-1">
                   <Link

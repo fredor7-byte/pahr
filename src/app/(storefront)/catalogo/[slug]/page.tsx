@@ -3,8 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getProductBySlug, getProducts, getPairsWellWith } from "@/actions/products";
 import { getCurrentExchangeRate } from "@/actions/exchange-rate";
-import { ProductDetails } from "@/components/storefront/product-details";
-import { ProductGallery } from "@/components/storefront/product-gallery";
+import { ProductView } from "@/components/storefront/product-view";
 import { ProductCard } from "@/components/storefront/product-card";
 import { PairsWellWith } from "@/components/storefront/pairs-well-with";
 import { FadeIn } from "@/components/storefront/motion";
@@ -83,19 +82,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <span className="text-charcoal-950">{product.name}</span>
       </nav>
 
-      {/* Product */}
-      <div className="grid md:grid-cols-2 gap-10 mb-16">
-        {/* Image Gallery */}
-        <ProductGallery
-          images={product.images ?? []}
-          productName={product.name}
-        />
+      {/* Product View (gallery + details with color sync) */}
+      <ProductView product={product} exchangeRate={exchangeRate?.rate_bs_per_usd} />
 
-        {/* Details + Pairs Well With */}
-        <div>
-          <ProductDetails product={product} exchangeRate={exchangeRate?.rate_bs_per_usd} />
-          <PairsWellWith products={pairsWellWith} />
-        </div>
+      {/* Pairs Well With */}
+      <div className="mb-16">
+        <PairsWellWith products={pairsWellWith} />
       </div>
 
       {/* Related Products */}

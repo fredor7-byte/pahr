@@ -5,6 +5,7 @@ import { formatUSD } from "@/lib/utils";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, totalUSD, totalItems } =
@@ -99,10 +100,25 @@ function CartItemRow({
 
   return (
     <div className="flex gap-3">
-      {/* Thumbnail placeholder */}
-      <div className="w-16 h-20 rounded bg-charcoal-100 shrink-0 flex items-center justify-center">
-        <span className="text-xs text-charcoal-400 font-heading">PAHR</span>
-      </div>
+      {/* Product image */}
+      <Link
+        href={`/catalogo/${item.product.slug}`}
+        className="relative w-16 h-20 rounded bg-charcoal-100 shrink-0 overflow-hidden"
+      >
+        {item.product.image_url ? (
+          <Image
+            src={item.product.image_url}
+            alt={item.product.name}
+            fill
+            sizes="64px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-xs text-charcoal-400 font-logo">Pahr</span>
+          </div>
+        )}
+      </Link>
 
       <div className="flex-1 min-w-0">
         <Link
