@@ -69,10 +69,22 @@ export function ProductDetails({ product, exchangeRate = 86.5 }: ProductDetailsP
 
       {/* Price */}
       <div>
-        <p className="font-heading text-2xl font-bold text-charcoal-950">
-          {formatUSD(price)}
-        </p>
-        <p className="text-sm text-charcoal-500 mt-0.5">
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <p className="font-heading text-3xl font-bold text-jungle-950">
+            {formatUSD(price)}
+          </p>
+          {product.compare_at_price_usd && product.compare_at_price_usd > price && (
+            <>
+              <p className="text-lg text-mist-500 line-through">
+                {formatUSD(product.compare_at_price_usd)}
+              </p>
+              <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 tracking-wider">
+                -{Math.round(((product.compare_at_price_usd - price) / product.compare_at_price_usd) * 100)}%
+              </span>
+            </>
+          )}
+        </div>
+        <p className="text-sm text-charcoal-500 mt-1">
           {formatBs(priceInBs)} (Tasa: {rate} Bs/$)
         </p>
       </div>

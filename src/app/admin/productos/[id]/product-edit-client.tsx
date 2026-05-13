@@ -28,6 +28,8 @@ interface ProductEditClientProps {
     slug: string;
     description: string | null;
     base_price_usd: number;
+    cost_usd: number | null;
+    compare_at_price_usd: number | null;
     is_active: boolean;
     is_featured: boolean;
     category: { name: string } | null;
@@ -45,8 +47,21 @@ export default function ProductEditClient({ product }: ProductEditClientProps) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState(String(product.base_price_usd));
+  const [cost, setCost] = useState(product.cost_usd ? String(product.cost_usd) : "");
+  const [compareAt, setCompareAt] = useState(
+    product.compare_at_price_usd ? String(product.compare_at_price_usd) : ""
+  );
   const [isActive, setIsActive] = useState(product.is_active);
   const [isFeatured, setIsFeatured] = useState(product.is_featured);
+
+  // Stock total for inventory value calculation
+  const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+  const currentCost = parseFloat(cost) || 0;
+  const currentPrice = parseFloat(price) || 0;
+  const margin = currentPrice > 0 ? ((currentPrice - currentCost) / currentPrice) * 100 : 0;
+  const profitPerUnit = currentPrice - currentCost;
+  const inventoryValueAtCost = currentCost * totalStock;
+  const inventoryValueAtPrice = currentPrice * totalStock;
 
   // Stock editing per variant
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
@@ -59,6 +74,8 @@ export default function ProductEditClient({ product }: ProductEditClientProps) {
       name,
       description: description || null,
       base_price_usd: parseFloat(price),
+      cost_usd: cost ? parseFloat(cost) : null,
+      compare_at_price_usd: compareAt ? parseFloat(compareAt) : null,
       is_active: isActive,
       is_featured: isFeatured,
     });
@@ -186,9 +203,9 @@ export default function ProductEditClient({ product }: ProductEditClientProps) {
           />
         )}
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-charcoal-500 mb-1">Precio base (USD)</p>
+            <p className="text-sm text-charcoal-500 mb-1">Precio venta (USD)</p>
             {isEditing ? (
               <Input
                 id="price"
@@ -198,15 +215,50 @@ export default function ProductEditClient({ product }: ProductEditClientProps) {
                 onChange={(e) => setPrice(e.target.value)}
               />
             ) : (
-              <p className="text-xl font-heading font-bold">
+              <p className="text-xl font-heading font-bold text-jungle-900">
                 {formatUSD(product.base_price_usd)}
               </p>
             )}
           </div>
           <div>
-            <p className="text-sm text-charcoal-500 mb-1">Slug</p>
-            <p className="text-sm font-mono">{product.slug}</p>
+            <p className="text-sm text-charcoal-500 mb-1">Precio normal (sin descuento)</p>
+            {isEditing ? (
+              <Input
+                id="compareAt"
+                type="number"
+                step="0.01"
+                value={compareAt}
+                onChange={(e) => setCompareAt(e.target.value)}
+                placeholder="62.50"
+              />
+            ) : (
+              <p className="text-lg font-medium text-mist-600 line-through">
+                {product.compare_at_price_usd ? formatUSD(product.compare_at_price_usd) : "—"}
+              </p>
+            )}
           </div>
+          <div>
+            <p className="text-sm text-charcoal-500 mb-1">Costo unidad (USD)</p>
+            {isEditing ? (
+              <Input
+                id="cost"
+                type="number"
+                step="0.01"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                placeholder="24.59"
+              />
+            ) : (
+              <p className="text-lg font-medium text-charcoal-700">
+                {product.cost_usd ? formatUSD(product.cost_usd) : "—"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm text-charcoal-500 mb-1">Slug</p>
+          <p className="text-sm font-mono">{product.slug}</p>
         </div>
 
         <div>
@@ -223,6 +275,45 @@ export default function ProductEditClient({ product }: ProductEditClientProps) {
           )}
         </div>
       </div>
+
+      {/* Rentabilidad */}
+      {currentCost > 0 && currentPrice > 0 && (
+        <div className="bg-gradient-to-br from-jungle-50 to-amber-50 rounded-lg border border-jungle-200 p-6">
+          <h2 className="font-heading text-lg font-semibold mb-4 text-jungle-900">
+            Rentabilidad
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-charcoal-500 uppercase tracking-wider">Margen %</p>
+              <p className={`text-2xl font-heading font-bold ${margin >= 50 ? "text-forest-700" : margin >= 30 ? "text-yellow-600" : "text-red-600"}`}>
+                {margin.toFixed(1)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-charcoal-500 uppercase tracking-wider">Ganancia / unidad</p>
+              <p className="text-2xl font-heading font-bold text-jungle-900">
+                {formatUSD(profitPerUnit)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-charcoal-500 uppercase tracking-wider">Inventario al costo</p>
+              <p className="text-lg font-medium text-charcoal-700">
+                {formatUSD(inventoryValueAtCost)}
+              </p>
+              <p className="text-xs text-charcoal-400">{totalStock} unidades</p>
+            </div>
+            <div>
+              <p className="text-xs text-charcoal-500 uppercase tracking-wider">Inventario a precio</p>
+              <p className="text-lg font-medium text-forest-700">
+                {formatUSD(inventoryValueAtPrice)}
+              </p>
+              <p className="text-xs text-charcoal-400">
+                Potencial: {formatUSD(inventoryValueAtPrice - inventoryValueAtCost)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Variants - editable stock */}
       <div className="bg-white rounded-lg border border-charcoal-200 p-6">

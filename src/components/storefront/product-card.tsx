@@ -19,6 +19,17 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const primaryImage = product.images?.find((img) => img.is_primary) ?? product.images?.[0];
 
+  const hasDiscount =
+    product.compare_at_price_usd != null &&
+    product.compare_at_price_usd > product.base_price_usd;
+  const discountPercent = hasDiscount
+    ? Math.round(
+        ((product.compare_at_price_usd! - product.base_price_usd) /
+          product.compare_at_price_usd!) *
+          100
+      )
+    : 0;
+
   return (
     <Link
       href={`/catalogo/${product.slug}`}
@@ -44,7 +55,12 @@ export function ProductCard({ product }: ProductCardProps) {
             Agotado
           </div>
         )}
-        {product.is_featured && totalStock > 0 && (
+        {hasDiscount && totalStock > 0 && (
+          <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2 py-1 tracking-wider">
+            -{discountPercent}%
+          </div>
+        )}
+        {product.is_featured && totalStock > 0 && !hasDiscount && (
           <div className="absolute top-3 left-3 bg-gold-500 text-white text-xs font-medium px-2 py-1">
             Destacado
           </div>
@@ -59,9 +75,16 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 className="text-sm font-medium text-jungle-950 group-hover:text-gold-600 transition-colors">
           {product.name}
         </h3>
-        <p className="text-sm font-semibold text-jungle-900">
-          {formatUSD(product.base_price_usd)}
-        </p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-sm font-semibold text-jungle-900">
+            {formatUSD(product.base_price_usd)}
+          </p>
+          {hasDiscount && (
+            <p className="text-xs text-mist-500 line-through">
+              {formatUSD(product.compare_at_price_usd!)}
+            </p>
+          )}
+        </div>
 
         {/* Color swatches */}
         {colors.length > 0 && (

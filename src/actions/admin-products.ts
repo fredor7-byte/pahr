@@ -9,6 +9,8 @@ export async function updateProduct(
     name?: string;
     description?: string | null;
     base_price_usd?: number;
+    cost_usd?: number | null;
+    compare_at_price_usd?: number | null;
     is_active?: boolean;
     is_featured?: boolean;
   }

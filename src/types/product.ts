@@ -15,6 +15,8 @@ export interface Product {
   slug: string;
   description: string | null;
   base_price_usd: number;
+  cost_usd: number | null;
+  compare_at_price_usd: number | null;
   is_featured: boolean;
   is_active: boolean;
   metadata: Record<string, unknown> | null;
